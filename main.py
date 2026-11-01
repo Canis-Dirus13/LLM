@@ -10,8 +10,11 @@ def main():
     api_key = os.environ.get("OPENROUTER_API_KEY")
     parser = argparse.ArgumentParser(description='Chatbot')
     parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
-    content = args.user_prompt
+    messages = [
+        {"role": "user", "content": args.user_prompt}
+    ]
     if api_key is None:
         raise RuntimeError("API-Key not found")
     client = OpenAI(
@@ -20,18 +23,15 @@ def main():
     )
     response = client.chat.completions.create(
         model="openrouter/free",
-        messages=[
-            {
-                "role": "user",
-                "content": content,
-            }
-        ],
+        messages=messages
     )
-    print(f"User prompt: {content}")
+    if args.verbose:
+        print(f"User prompt: {[y['content'] for y in messages if y['role'] == 'user']}")
     if response.usage is None:
         raise RuntimeError("Failed API request")
-    print(f"Prompt tokens: {response.usage.prompt_tokens}")
-    print(f"Response tokens: {response.usage.completion_tokens}")
+    if args.verbose:
+        print(f"Prompt tokens: {response.usage.prompt_tokens}")
+        print(f"Response tokens: {response.usage.completion_tokens}")
     print(f"Response: {response.choices[0].message.content}")
 
 if __name__ == "__main__":
